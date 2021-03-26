@@ -156,7 +156,7 @@ const ReactDOM = (() => {
                 }
             }
 
-            if (elem && !sameType) {
+            if (oldFiber && !sameType) {
                 oldFiber.effectTag = 'DELETION'
                 deletions.push(oldFiber)
             }

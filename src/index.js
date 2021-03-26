@@ -13,4 +13,7 @@ const App = props => {
 
 const root = document.getElementById('app')
 
-ReactDOM.render(App('Title', 'text'), root)
+ReactDOM.render(
+    App({ title: 'Title', text: 'text' }),
+    root
+)
