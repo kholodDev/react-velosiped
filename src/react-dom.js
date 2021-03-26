@@ -59,19 +59,31 @@ const ReactDOM = (() => {
             })
     }
 
+    function commitDeletion(fiber, domParent) {
+        if (fiber.dom) {
+            domParent.removeChild(fiber.dom)
+        } else {
+            commitDeletion(fiber.child, domParent)
+        }
+    }
+
     function commitWork(fiber) {
         if (!fiber) {
             return null
         }
 
-        const domParent = fiber.parent.dom
+        let domParentFiber = fiber.parent
+        while (!domParentFiber.dom) {
+            domParentFiber = domParentFiber.parent
+        }
+        const domParent = domParentFiber.dom
 
         if (fiber.effectTag === 'PLACEMENT' && fiber.dom !== null) {
             domParent.appendChild(fiber.dom)
         } else if (fiber.effectTag === 'UPDATE' && fiber.dom !== null) {
             updateDOM(fiber.dom, fiber.alternate.props, fiber.props)
         } else if (fiber.effectTag === 'DELETION') {
-            domParent.removeChild(fiber.dom)
+            commitDeletion(fiber, domParent)
         }
 
         commitWork(fiber.child)
@@ -164,13 +176,28 @@ const ReactDOM = (() => {
         }
     }
 
-    function performUnitOfWork(fiber) {
+    function updateFunctionComponent(fiber) {
+        const children = [fiber.type(fiber.props)]
+        reconcileChildren(fiber, children)
+    }
+
+    function updateHostComponent(fiber) {
         if (!fiber.dom) {
             fiber.dom = createDOM(fiber)
         }
 
-        const elements = fiber.props.children
-        reconcileChildren(fiber, elements)
+        const children = fiber.props.children
+        reconcileChildren(fiber, children)
+    }
+
+    function performUnitOfWork(fiber) {
+        const isFunctionalComponent = fiber.type instanceof Function
+
+        if (isFunctionalComponent) {
+            updateFunctionComponent(fiber)
+        } else {
+            updateHostComponent(fiber)
+        }
 
         if (fiber.child) {
             return fiber.child
