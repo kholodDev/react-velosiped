@@ -4,35 +4,13 @@ const App = React.createElement(
     React.createElement(
         'h1',
         { class: 'title' },
-        'Step list'
+        'Title'
     ),
     React.createElement(
-        'ol',
-        {
-            class: 'list',
-        },
-        React.createElement(
-            'li',
-            {
-                class: 'list-item',
-            },
-            'First row'
-        ),
-        React.createElement(
-            'li',
-            {
-                class: 'list-item',
-            },
-            'Second row'
-        ),
-        React.createElement(
-            'li',
-            {
-                class: 'list-item',
-            },
-            'Third row'
-        ),
-    )
+        'p',
+        { class: 'text' },
+        'Text'
+    ),
 )
 
 const root = document.getElementById('app')

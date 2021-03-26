@@ -1,5 +1,23 @@
-body {
+body, h1, p {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+}
+
+.container {
+    padding: 20px;
+    background: grey;
+}
+
+.title {
+    font-size: 40px;
+    font-family: sans-serif;
+    color: red;
+    margin-bottom: 20px;
+}
+
+.text {
+    font-size: 30px;
+    font-family: sans-serif;
+    color: green;
 }
