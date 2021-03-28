@@ -4,6 +4,16 @@
  */
 
 const React = (() => {
+    const attributeNames = ['class']
+    const booleanAttributeNames = ['disabled']
+
+    let nextUnitOfWork = null
+    let workInProgressTree = null
+    let currentTree = null
+    let deletions = null
+    let hookIndex = null
+    let workInProgressFiber = null
+
     function createTextElement(text = '') {
         return {
             type: 'TEXT_ELEMENT',
@@ -19,7 +29,9 @@ const React = (() => {
             type,
             props: {
                 ...props,
-                children: children.map(child => {
+                children: children
+                    .filter(Boolean)
+                    .map(child => {
                     if (typeof child === 'object') {
                         return child
                     }
@@ -31,68 +43,89 @@ const React = (() => {
     }
 
     function useState(initialState) {
-        let state = initialState
+        const oldHook = 
+            workInProgressFiber.alternate &&
+            workInProgressFiber.alternate.hooks &&
+            workInProgressFiber.alternate.hooks[hookIndex]
 
-        const setState = (newState) => { console.log(newState) }
+        const hook = {
+            state: oldHook ? oldHook.state : initialState,
+            queue: [],
+        }
+
+        const actions = oldHook ? oldHook.queue : []
+        actions.forEach(action => {
+            hook.state = action(hook.state)
+        })
+
+        const setState = action => {
+            hook.queue.push(action instanceof Function ? action : () => action)
+            
+            workInProgressTree = {
+                dom: currentTree.dom,
+                props: currentTree.props,
+                alternate: currentTree
+            }
+
+            nextUnitOfWork = workInProgressTree
+            deletions = []
+
+            startRender()
+        }
+
+        workInProgressFiber.hooks.push(hook)
+        hookIndex++
 
         return [
-            state,
+            hook.state,
             setState
         ]
     }
 
-    let nextUnitOfWork = null
-    let workInProgressTree = null
-    let currentTree = null
-    let deletions = null
+    function setAttribute(dom, key, value) {
+        if (key.startsWith('on')) {
+            const eventType = key.toLowerCase().substring(2)
+            dom.addEventListener(eventType, value)
+        } else if (attributeNames.includes(key)) {
+            dom.setAttribute(key, value)
+        } else if (booleanAttributeNames.includes(key) && value === true) {
+            dom.setAttribute(key, value)
+        } else {
+            dom[key] = value
+        }
+    }
+
+    function removeAttribute(dom, key, value) {
+        if (key.startsWith('on')) {
+            const eventType = key.toLowerCase().substring(2)
+            dom.removeEventListener(eventType, value)
+        } else if (attributeNames.includes(key)) {
+            dom.removeAttribute(key)
+        } else if (booleanAttributeNames.includes(key) && value === false) {
+            dom.removeAttribute(key)
+        } else {
+            dom[key] = ''
+        }
+    }
 
     function updateDOM(dom, prevProps, nextProps) {
         Object
             .keys(prevProps)
-            .filter(key => key.startsWith('on'))
+            .filter(key => key !== 'children')
             .filter(key => !(key in nextProps) || prevProps[key] !== nextProps[key])
-            .forEach(key => {
-                const eventType = key.toLowerCase().substring(2)
-                dom.removeEventListener(eventType, prevProps[key])
-            })
-
-        Object
-            .keys(prevProps)
-            .filter(key => key.startsWith('on'))
-            .filter(key => prevProps[key] !== nextProps[key])
-            .forEach(key => {
-                const eventType = key.toLowerCase().substring(2)
-                dom.addEventListener(eventType, prevProps[key])
-            })
-
-        Object
-            .keys(prevProps)
-            .filter(key => key !== 'children' && !key.startsWith('on'))
-            .filter(key => !(key in nextProps))
-            .forEach(key => {
-                if (isNativeAttribute(key)) {
-                    dom.setAttribute(key, '')
-                } else {
-                    dom[key] = ''
-                }
-            })
+            .forEach(key => removeAttribute(dom, key, prevProps[key]))
 
         Object
             .keys(nextProps)
             .filter(key => key !== 'children')
             .filter(key => prevProps[key] !== nextProps[key])
-            .forEach(key => {
-                if (isNativeAttribute(key)) {
-                    dom.setAttribute(key, nextProps[key])
-                } else {
-                    dom[key] = nextProps[key]
-                }
-            })
+            .forEach(key => setAttribute(dom, key, nextProps[key]))
     }
 
     function commitDeletion(fiber, domParent) {
         if (fiber.dom) {
             domParent.removeChild(fiber.dom)
+            fiber.parent.child = null
         } else {
             commitDeletion(fiber.child, domParent)
         }
@@ -109,9 +142,9 @@ const React = (() => {
         }
         const domParent = domParentFiber.dom
 
-        if (fiber.effectTag === 'PLACEMENT' && fiber.dom !== null) {
+        if (fiber.effectTag === 'PLACEMENT' && fiber.dom) {
             domParent.appendChild(fiber.dom)
-        } else if (fiber.effectTag === 'UPDATE' && fiber.dom !== null) {
+        } else if (fiber.effectTag === 'UPDATE' && fiber.dom) {
             updateDOM(fiber.dom, fiber.alternate.props, fiber.props)
         } else if (fiber.effectTag === 'DELETION') {
             commitDeletion(fiber, domParent)
@@ -136,19 +169,6 @@ const React = (() => {
         return document.createElement(type)
     }
 
-    function setAttribute(dom, key, value) {
-        const attributeNames = ['class']
-
-        if (key.startsWith('on')) {
-            const eventType = key.toLowerCase().substring(2)
-            dom.addEventListener(eventType, value)
-        } else if (attributeNames.includes(key)) {
-            dom.setAttribute(key, value)
-        } else {
-            dom[key] = value
-        }
-    }
-
     function createDOM(fiber) {
         const { type, props } = fiber
         const dom = createDOMElement(type)
@@ -163,10 +183,10 @@ const React = (() => {
 
     function reconcileChildren(fiber, elements) {
         let idx = 0
-        let oldFiber = workInProgressTree.alternate && workInProgressTree.alternate.child
+        let oldFiber = fiber.alternate && fiber.alternate.child
         let prevSibling = null
 
-        while (idx < elements.length || oldFiber !== null) {
+        while (idx < elements.length || oldFiber != null) {
             const elem = elements[idx]
             let newFiber = null
 
@@ -175,7 +195,7 @@ const React = (() => {
             if (sameType) {
                 newFiber = {
                     type: oldFiber.type,
-                    props: oldFiber.props,
+                    props: elem.props,
                     dom: oldFiber.dom,
                     parent: fiber,
                     alternate: oldFiber,
@@ -215,6 +235,9 @@ const React = (() => {
     }
 
     function updateFunctionComponent(fiber) {
+        workInProgressFiber = fiber
+        hookIndex = 0
+        workInProgressFiber.hooks = []
         const children = [fiber.type(fiber.props)]
         reconcileChildren(fiber, children)
     }
@@ -254,6 +277,10 @@ const React = (() => {
         return null
     }
 
+    function startRender() {
+        requestIdleCallback(workLoop)
+    }
+
     function workLoop(deadline) {
         let shouldYield = false
 
@@ -265,7 +292,7 @@ const React = (() => {
         if (!nextUnitOfWork && workInProgressTree) {
             commitTree()
         } else {
-            requestIdleCallback(workLoop)
+            startRender()
         }
     }
 
@@ -282,7 +309,7 @@ const React = (() => {
 
         nextUnitOfWork = workInProgressTree
 
-        requestIdleCallback(workLoop)
+        startRender()
     }
 
     return {

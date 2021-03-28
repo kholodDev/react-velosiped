@@ -18,19 +18,12 @@ const TextComponent = ({ text }) => {
     )
 }
 
-const BtnComponent = () => {
-    const [state, setState] = React.useState(0)
-
-    const handleClick = () => setState(currentState => currentState + 1)
-
-    const title = state === 0
-        ? 'Click me'
-        : `Сlicked ${state} times`
-
+const BtnComponent = ({ onClick, title, disabled = false }) => {
+    console.log(disabled);
     return (
         React.createElement(
             'button',
-            { class: 'button', onClick: handleClick },
+            { class: 'button', onClick, disabled },
             title,
         )
     )
@@ -45,8 +38,32 @@ const ImgComponent = () => {
     )
 }
 
-const App = props => {
-    const { title, text, btnText } = props
+const CounterComponent = ({ counter }) => {
+    return (
+        React.createElement(
+            'p',
+            { class: 'counter' },
+            `< ${counter} >`
+        )
+    )
+}
+
+const ButtonsComponent = ({ onIncrease, onReset, disabledReset }) => {
+    return (
+        React.createElement(
+            'div',
+            { class: 'btns-container' },
+            React.createElement(BtnComponent, { onClick: onIncrease, title: 'Increase'}),
+            React.createElement(BtnComponent, { onClick: onReset, title: 'Reset', disabled: disabledReset }),
+        )
+    )
+}
+
+const App = ({ title, text }) => {
+    const [state, setState] = React.useState(0)
+
+    const handleIncrease = () => setState(currentState => currentState + 1)
+    const handleReset = () => setState(0)
 
     return (
         React.createElement(
@@ -55,10 +72,12 @@ const App = props => {
             React.createElement(ImgComponent),
             React.createElement(TitleComponent, { title: title }),
             React.createElement(TextComponent, { text: text }),
-            React.createElement(BtnComponent),
+            React.createElement(ButtonsComponent, { onIncrease: handleIncrease, onReset: handleReset, disabledReset: state === 0 }),
+            state > 0 && React.createElement(CounterComponent, { counter: state }),
         )
     )
 }
+
 
 const root = document.getElementById('app')
 
