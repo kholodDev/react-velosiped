@@ -49,6 +49,6 @@ const App = props => {
 const root = document.getElementById('app')
 
 ReactDOM.render(
-    React.createElement(App, { title: 'Title', text: 'text', btnText: 'click me!' }),
+    React.createElement(App, { title: 'React example', text: 'Click on the button to call alert', btnText: 'click me!' }),
     root
 )
