@@ -3,7 +3,6 @@
  * Источник: https://pomb.us/build-your-own-react
  */
 
-// eslint-disable-next-line no-unused-vars
 const React = (() => {
     function createTextElement(text = '') {
         return {

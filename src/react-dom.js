@@ -2,18 +2,12 @@
  * Основано на React v16.8
  * Источник: https://pomb.us/build-your-own-react
  */
-/* eslint-disable consistent-return, max-lines-per-function */
-// eslint-disable-next-line no-unused-vars
+
 const ReactDOM = (() => {
     let nextUnitOfWork = null
     let workInProgressTree = null
     let currentTree = null
     let deletions = null
-
-    function isNativeAttribute(name) {
-        const nativeAttributeNames = ['class']
-        return nativeAttributeNames.includes(name)
-    }
 
     function updateDOM(dom, prevProps, nextProps) {
         Object
@@ -105,6 +99,19 @@ const ReactDOM = (() => {
         return document.createElement(type)
     }
 
+    function setAttribute(dom, key, value) {
+        const attributeNames = ['class']
+
+        if (key.startsWith('on')) {
+            const eventType = key.toLowerCase().substring(2)
+            dom.addEventListener(eventType, value)
+        } else if (attributeNames.includes(key)) {
+            dom.setAttribute(key, value)
+        } else {
+            dom[key] = value
+        }
+    }
+
     function createDOM(fiber) {
         const { type, props } = fiber
         const dom = createDOMElement(type)
@@ -112,13 +119,7 @@ const ReactDOM = (() => {
         Object
             .keys(props)
             .filter(key => key !== 'children')
-            .forEach(key => {
-                if (isNativeAttribute(key)) {
-                    dom.setAttribute(key, props[key])
-                } else {
-                    dom[key] = props[key]
-                }
-            })
+            .forEach(key => setAttribute(dom, key, props[key]))
 
         return dom
     }
@@ -139,7 +140,7 @@ const ReactDOM = (() => {
                     type: oldFiber.type,
                     props: oldFiber.props,
                     dom: oldFiber.dom,
-                    parent: workInProgressTree,
+                    parent: fiber,
                     alternate: oldFiber,
                     effectTag: 'UPDATE',
                 }
@@ -150,7 +151,7 @@ const ReactDOM = (() => {
                     type: elem.type,
                     props: elem.props,
                     dom: null,
-                    parent: workInProgressTree,
+                    parent: fiber,
                     alternate: null,
                     effectTag: 'PLACEMENT',
                 }
