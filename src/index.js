@@ -18,10 +18,14 @@ const TextComponent = ({ text }) => {
     )
 }
 
-const BtnComponent = ({ title }) => {
-    const handleClick = () => {
-        alert('Button has been clicked!');
-    }
+const BtnComponent = () => {
+    const [state, setState] = React.useState(0)
+
+    const handleClick = () => setState(currentState => currentState + 1)
+
+    const title = state === 0
+        ? 'Click me'
+        : `Сlicked ${state} times`
 
     return (
         React.createElement(
@@ -51,14 +55,14 @@ const App = props => {
             React.createElement(ImgComponent),
             React.createElement(TitleComponent, { title: title }),
             React.createElement(TextComponent, { text: text }),
-            React.createElement(BtnComponent, { title: btnText }),
+            React.createElement(BtnComponent),
         )
     )
 }
 
 const root = document.getElementById('app')
 
-ReactDOM.render(
-    React.createElement(App, { title: 'React example', text: 'Click on the button to call alert', btnText: 'click me!' }),
+React.render(
+    React.createElement(App, { title: 'React example', text: 'Click on the button to increase counter' }),
     root
 )
