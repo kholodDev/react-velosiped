@@ -18,18 +18,17 @@ body, h1, p {
     font-size: 40px;
     font-family: sans-serif;
     color: #fff;
-    margin-bottom: 20px;
 }
 
 .text {
     font-size: 30px;
     font-family: sans-serif;
     color: #ffffff88;
-    margin-bottom: 20px;
+    margin-bottom: 30px;
 }
 
 .button {
-    padding: 10px 20px;
+    padding: 12px 30px;
     font-size: 20px;
     text-transform: uppercase;
     color: #fff;
