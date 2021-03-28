@@ -32,6 +32,15 @@ const BtnComponent = ({ title }) => {
     )
 }
 
+const ImgComponent = () => {
+    return (
+        React.createElement(
+            'img',
+            { class: 'img', src: 'logo.svg' }
+        )
+    )
+}
+
 const App = props => {
     const { title, text, btnText } = props
 
@@ -39,6 +48,7 @@ const App = props => {
         React.createElement(
             'div',
             { class: 'container' },
+            React.createElement(ImgComponent),
             React.createElement(TitleComponent, { title: title }),
             React.createElement(TextComponent, { text: text }),
             React.createElement(BtnComponent, { title: btnText }),
